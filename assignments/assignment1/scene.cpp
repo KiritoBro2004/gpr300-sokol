@@ -1,4 +1,5 @@
 #include "scene.h"
+#include <iostream>
 
 // imgui
 #include "imgui/imgui.h"
@@ -10,6 +11,8 @@
 
 // batteries
 #include "batteries/opengl.h"
+
+using namespace std;
 
 struct {
     float shininess = 1.0f;
@@ -43,11 +46,24 @@ Scene::Scene()
     //framebuffer setup
     glCreateFramebuffers(1, &fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    {
+        //create texture
+        glGenTextures(1, &fbo_texture);
+        glBindTexture(GL_TEXTURE_2D, fbo_texture);
 
-    glGenTextures(1, &fbo_texture);
-    glBindTexture(GL_TEXTURE_2D, fbo_texture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, 800, 600, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); 
+    }
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo_texture, 0);  
+
+    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    {
+        cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << endl;
+    }
+    //glBindFramebuffer(GL_FRAMEBUFFER, 0);  
+    
 }
 
 Scene::~Scene()
@@ -65,6 +81,7 @@ void Scene::Update(float dt)
 glm::vec3 light_color = glm::vec3(1.0f);
 void Scene::Render(void)
 {
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
     const auto view_proj = camera.Projection() * camera.View();
 
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);

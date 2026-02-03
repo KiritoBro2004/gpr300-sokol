@@ -3,6 +3,7 @@
 // batteries
 #include "batteries/scene.h"
 #include "batteries/lights.h"
+#include "batteries/opengl.h"
 
 // ew
 #include "ew/model.h"
