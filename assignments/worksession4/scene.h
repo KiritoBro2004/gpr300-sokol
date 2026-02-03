@@ -25,4 +25,10 @@ class Scene final : public batteries::Scene
     std::unique_ptr<ew::Texture> txGradient;
 
     batteries::light_t light;
+
+
+    struct {
+      glm::vec3 color1;
+      glm::vec3 color2;
+    } palette;
 };
