@@ -25,6 +25,7 @@ in vec2 vs_texcoord;
 uniform vec3 camera;
 uniform Light light;
 uniform Material material; //shininess is alpha
+uniform sampler2D txTrippy;
 
 vec3 blinnphong(vec3 normal, vec3 frag_position, Light light) {
   // glsl: dot(vec3, vec3)
@@ -52,6 +53,9 @@ void main()
   vec3 ambient = material.ambient;
   vec3 lighting = blinnphong(vs_normal, vs_position, light) + ambient * 0.5;
   vec3 object_color = vs_normal * 0.5 + 0.5;
-  vec3 final_color = object_color * lighting;
+
+  vec3 tex = texture(txTrippy, vs_texcoord).rgb;
+
+  vec3 final_color = (object_color+tex) * lighting;
   FragColor = vec4(final_color, 1.0);
 }

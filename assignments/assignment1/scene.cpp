@@ -21,12 +21,12 @@ struct {
 Scene::Scene()
 {
     suzanne = std::make_unique<ew::Model>("assets/models/suzanne.obj");
-    blinnphong = std::make_unique<ew::Shader>(
+    toon = std::make_unique<ew::Shader>(
         "assets/shaders/default.vs",
-        "assets/shaders/blinnphong.fs"
+        "assets/shaders/toon.fs"
     );
-    txTrippy = std::make_unique<ew::Texture>(
-        "assets/textures/trippy.jpg"
+    txGradient = std::make_unique<ew::Texture>(
+        "assets/textures/ZAtoon.png"
     );
 
     light = {
@@ -34,10 +34,25 @@ Scene::Scene()
         .color = {1.0f, 0.0f, 1.0f},
         .position = {2.0f, 2.0f, 2.0f},
     };
+
+    palette = {
+        .color1 = {1.0f, 0.0f, 0.0f},
+        .color2 = {0.0f, 1.0f, 0.0f}
+    };
+
+    //framebuffer setup
+    glCreateFramebuffers(1, &fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+    glGenTextures(1, &fbo_texture);
+    glBindTexture(GL_TEXTURE_2D, fbo_texture);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 Scene::~Scene()
 {
+    glDeleteFramebuffers(1, &fbo);
 }
 
 void Scene::Update(float dt)
@@ -58,32 +73,31 @@ void Scene::Render(void)
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glEnable(GL_DEPTH_TEST);
-    
+
     auto index = 0;
     glActiveTexture(GL_TEXTURE0 + index);
-    glBindTexture(GL_TEXTURE_2D, txTrippy->getID());
+    glBindTexture(GL_TEXTURE_2D, txGradient->getID());
     // glDisable(GL_DEPTH_TEST);
 
-
-    blinnphong->use();
-
-    blinnphong->setInt("txTrippy", index);
-
-
-    // scene matrices
-    blinnphong->setMat4("model", glm::mat4(1.0f));
-    blinnphong->setMat4("view_proj", view_proj);
-
-    blinnphong->setVec3("camera", camera.position);
-
-    blinnphong->setFloat("material.shininess", debug.shininess);
-    blinnphong->setVec3("material.ambient", debug.ambience);
-    blinnphong->setVec3("material.diffuse", debug.diffuse);
-    blinnphong->setVec3("material.specular", debug.specular);
+    toon->use();
+    toon->setInt("txGradient", index);
     
-    blinnphong->setVec3("light.position", light.position);
-    blinnphong->setVec3("light.color", light_color);
+    // scene matrices
+    toon->setMat4("model", glm::mat4(1.0f));
+    toon->setMat4("view_proj", view_proj);
 
+    toon->setVec3("camera", camera.position);
+
+    toon->setFloat("material.shininess", debug.shininess);
+    toon->setVec3("material.ambient", debug.ambience);
+    toon->setVec3("material.diffuse", debug.diffuse);
+    toon->setVec3("material.specular", debug.specular);
+    
+    toon->setVec3("light.position", light.position);
+    toon->setVec3("light.color", light_color);
+
+    toon->setVec3("pal.color1", palette.color1);
+    toon->setVec3("pal.color2", palette.color2);
 
     // draw suzanne
     suzanne->draw();
@@ -128,6 +142,9 @@ void Scene::Debug(void)
     ImGui::ColorEdit3("Diffuse color", &debug.diffuse.x);
     ImGui::ColorEdit3("Specular color", &debug.specular.x);
 
+    ImGui::SeparatorText("Palette");
+    ImGui::ColorEdit3("Color1", &palette.color1[0]);
+    ImGui::ColorEdit3("Color2", &palette.color2[0]);
 
     /* build debug ui here */
 
