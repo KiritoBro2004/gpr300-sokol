@@ -3,12 +3,13 @@
 // batteries
 #include "batteries/scene.h"
 #include "batteries/lights.h"
-#include "batteries/opengl.h"
+
 
 // ew
 #include "ew/model.h"
 #include "ew/shader.h"
 #include "ew/texture.h"
+#include "ew/mesh.h"
 
 class Scene final : public batteries::Scene
 {
@@ -22,21 +23,13 @@ class Scene final : public batteries::Scene
 
   private:
     std::unique_ptr<ew::Model> suzanne;
-    std::unique_ptr<ew::Shader> toon;
-    std::unique_ptr<ew::Texture> txGradient;
+    std::unique_ptr<ew::Shader> water;
 
-    // post-processing effects
-    std::unique_ptr<ew::Shader> postprocess;
+    // mipmaps
+    std::unique_ptr<ew::Texture> wave_spec; // mipmap: 0
+    std::unique_ptr<ew::Texture> wave_tex;  // mipmap: 1
+    std::unique_ptr<ew::Texture> wave_warp;  // mipmap: 2
 
-    batteries::light_t light;
-
-
-    struct {
-      glm::vec3 color1;
-      glm::vec3 color2;
-    } palette;
-
-    GLuint fbo;
-    GLuint fboTexture;
-    GLuint fboDepth;
+    //water plane
+    ew::Mesh plane;
 };
