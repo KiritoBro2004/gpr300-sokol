@@ -25,14 +25,17 @@ struct palette {
 in vec3 vs_position;
 in vec3 vs_normal;
 in vec2 vs_texcoord;
+in vec4 vs_lightSpacePos;
 
 // uniforms
 uniform vec3 camera;
 uniform Light light;
 uniform palette pal;
 uniform Material material; //shininess is alpha
-
+uniform sampler2D shadowMap;
 uniform sampler2D txGradient;
+uniform float minBias;
+uniform float maxBias;
 
 
 vec3 toonShading(vec3 normal, vec3 frag_position, Light light) {
@@ -56,11 +59,28 @@ vec3 toonShading(vec3 normal, vec3 frag_position, Light light) {
   return (light_color);
 }
 
+float calculateShadow(vec4 lightSpacePos, vec3 lightDir)
+{
+    // convert from clip space (-1 to 1) to texture space (0 to 1)
+    vec3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
+    projCoords = projCoords * 0.5 + 0.5;
+
+    // sample the closest depth from the light's perspective
+    float closestDepth = texture(shadowMap, projCoords.xy).r;
+    
+    // current fragment depth from light
+    float currentDepth = projCoords.z;
+
+    // if current depth is greater than closest, it's in shadow
+    float bias = max(maxBias * (1.0 - dot(vs_normal, lightDir)), minBias);
+    return (currentDepth - bias) > closestDepth ? 1.0 : 0.0;
+}
+
 void main()
 {
   vec3 ambient = material.ambient;
   vec3 lighting = toonShading(vs_normal, vs_position, light) + ambient * 0.5;
-  //vec3 object_color = vs_normal * 0.5 + 0.5;
-  vec3 final_color = lighting;
+  float shadow = calculateShadow(vs_lightSpacePos, normalize(light.position - vs_position));
+  vec3 final_color = lighting * (1.0 - shadow * 0.5);
   FragColor = vec4(final_color, 1.0);
 }
