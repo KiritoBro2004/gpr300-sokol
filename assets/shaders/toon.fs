@@ -61,19 +61,28 @@ vec3 toonShading(vec3 normal, vec3 frag_position, Light light) {
 
 float calculateShadow(vec4 lightSpacePos, vec3 lightDir)
 {
-    // convert from clip space (-1 to 1) to texture space (0 to 1)
     vec3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
     projCoords = projCoords * 0.5 + 0.5;
 
-    // sample the closest depth from the light's perspective
-    float closestDepth = texture(shadowMap, projCoords.xy).r;
-    
-    // current fragment depth from light
     float currentDepth = projCoords.z;
-
-    // if current depth is greater than closest, it's in shadow
     float bias = max(maxBias * (1.0 - dot(vs_normal, lightDir)), minBias);
-    return (currentDepth - bias) > closestDepth ? 1.0 : 0.0;
+
+    float shadow = 0.0;
+    vec2 size = 1.0 / textureSize(shadowMap, 0);
+
+    // get sample, like the kernel stuff before
+    for(int x = -1; x <= 1; x++)
+    {
+        for(int y = -1; y <= 1; y++)
+        {
+            float closestDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * size).r;
+            shadow += (currentDepth - bias) > closestDepth ? 1.0 : 0.0;
+        }
+    }
+
+    // average the sample
+    shadow /= 9.0;
+    return shadow;
 }
 
 void main()
